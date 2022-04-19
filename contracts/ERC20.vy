@@ -1,0 +1,80 @@
+# @version >=0.3.2
+
+from vyper.interfaces import ERC20
+
+
+event Transfer:
+    sender: indexed(address)
+    receiver: indexed(address)
+    amount: uint256
+
+
+event Approval:
+    owner: indexed(address)
+    spender: indexed(address)
+    amount: uint256
+
+
+NAME: immutable(String[32])
+SYMBOL: immutable(String[32])
+DECIMALS: immutable(uint8)
+
+totalSupply: public(uint256)
+
+balanceOf: public(HashMap[address, uint256])
+
+allowance: public(HashMap[address, HashMap[address, uint256]])
+
+@external
+def __init__(name: String[32], symbol: String[32], decimals: uint8):
+    NAME = name
+    SYMBOL = symbol
+    DECIMALS = decimals
+
+
+@external
+def transfer(receiver: address, amount: uint256) -> bool:
+    return self._transferFrom(msg.sender, receiver, amount)
+
+
+@external
+def transferFrom(sender: address, receiver: address, amount: uint256) -> bool:
+    return self._transferFrom(sender, receiver, amount)
+
+
+@external
+def approve(spender: address, amount: uint256) -> bool:
+    self.allowance[msg.sender][spender] = amount
+    log Approval(msg.sender, spender, amount)
+    return True
+
+
+@internal
+def _transferFrom(sender: address, receiver: address, amount: uint256) -> bool:
+    self.allowance[sender][msg.sender] -= amount
+
+    self.balanceOf[sender] -= amount
+
+    # Cannot overflow because the sum of all user
+    # balances can't exceed MAX_UINT256
+    self.balanceOf[receiver] = unsafe_add(amount, self.balanceOf[receiver])
+
+    log Transfer(sender, receiver, amount)
+
+    return True
+
+
+# TODO: generate getters automatically
+@external
+def name() -> String[32]:
+    return NAME
+
+
+@external
+def symbol() -> String[32]:
+    return SYMBOL
+
+
+@external
+def decimals() -> uint8:
+    return DECIMALS
