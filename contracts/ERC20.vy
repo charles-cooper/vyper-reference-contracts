@@ -18,6 +18,7 @@ event Approval:
 NAME: immutable(String[32])
 SYMBOL: immutable(String[32])
 DECIMALS: immutable(uint8)
+MINTER: immutable(address)
 
 totalSupply: public(uint256)
 
@@ -26,10 +27,26 @@ balanceOf: public(HashMap[address, uint256])
 allowance: public(HashMap[address, HashMap[address, uint256]])
 
 @external
-def __init__(name: String[32], symbol: String[32], decimals: uint8):
+def __init__(minter: address, name: String[32], symbol: String[32], decimals: uint8):
+    MINTER = minter
     NAME = name
     SYMBOL = symbol
     DECIMALS = decimals
+
+
+@internal
+def _transferFrom(sender: address, receiver: address, amount: uint256) -> bool:
+    self.allowance[sender][msg.sender] -= amount
+
+    self.balanceOf[sender] -= amount
+
+    # Cannot overflow because the sum of all user
+    # balances can't exceed MAX_UINT256
+    self.balanceOf[receiver] = unsafe_add(amount, self.balanceOf[receiver])
+
+    log Transfer(sender, receiver, amount)
+
+    return True
 
 
 @external
@@ -49,18 +66,15 @@ def approve(spender: address, amount: uint256) -> bool:
     return True
 
 
-@internal
-def _transferFrom(sender: address, receiver: address, amount: uint256) -> bool:
-    self.allowance[sender][msg.sender] -= amount
+@external
+def mint(receiver: address, amount: uint256) -> bool:
+    assert MINTER == msg.sender
 
-    self.balanceOf[sender] -= amount
-
-    # Cannot overflow because the sum of all user
-    # balances can't exceed MAX_UINT256
+    self.totalSupply += amount
+    # can unsafe_add because balanceOf[receiver] <= totalSupply
     self.balanceOf[receiver] = unsafe_add(amount, self.balanceOf[receiver])
 
-    log Transfer(sender, receiver, amount)
-
+    log Transfer(empty(address), receiver, amount)
     return True
 
 
