@@ -54,6 +54,7 @@ SUPPORTED_INTERFACES: constant(bytes4[4]) = [
     0x80ac58cd, # ERC721
     0x150b7a02, # ERC721TokenReceiver
     0x5b5e139f, # ERC721Metadata
+    0x780e9d63, # ERC721Enumerable
 ]
 
 
