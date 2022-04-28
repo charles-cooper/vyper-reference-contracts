@@ -79,16 +79,19 @@ def mint(receiver: address, amount: uint256) -> bool:
 
 
 # TODO: generate getters automatically
+@view
 @external
 def name() -> String[32]:
     return NAME
 
 
+@view
 @external
 def symbol() -> String[32]:
     return SYMBOL
 
 
+@view
 @external
 def decimals() -> uint8:
     return DECIMALS
