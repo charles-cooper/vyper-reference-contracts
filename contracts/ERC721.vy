@@ -1,3 +1,4 @@
+# version >=0.3.4
 # @dev Implementation of ERC-721 non-fungible token standard.
 # Modified from: https://github.com/vyperlang/vyper/blob/de74722bf2d8718cca46902be165f9fe0e3641dd/examples/tokens/ERC721.vy
 
@@ -369,34 +370,7 @@ def symbol() -> String[32]:
     return SYMBOL
 
 
-@internal
-@pure
-def _uint_to_string(_value: uint256) -> String[78]:
-    if _value == 0:
-        return "0"
-
-    buffer: Bytes[78] = b""
-    digits: uint256 = 78
-
-    for i in range(78):
-        # go forward to find the # of digits, and set it
-        # only if we have found the last index
-        if digits == 78 and _value / 10 ** i == 0:
-            digits = i
-
-        val: uint256 = ((_value / 10 ** (77 - i)) % 10) + 48
-        char: Bytes[1] = slice(convert(val, bytes32), 31, 1)
-        buffer = raw_call(
-            IDENTITY_PRECOMPILE,
-            concat(buffer, char),
-            max_outsize=78,
-            is_static_call=True
-        )
-
-    return convert(slice(buffer, 78 - digits, digits), String[78])
-
-
 @external
 @view
 def tokenURI(tokenId: uint256) -> String[206]:
-    return concat(BASE_URI, self._uint_to_string(tokenId))
+    return concat(BASE_URI, uint2str(tokenId))
