@@ -373,4 +373,4 @@ def symbol() -> String[32]:
 @external
 @view
 def tokenURI(tokenId: uint256) -> String[206]:
-    return concat(BASE_URI, uint2str(tokenId))
+    return concat(BASE_URI, str(tokenId))
