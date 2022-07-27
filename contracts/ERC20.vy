@@ -35,9 +35,7 @@ def __init__(minter: address, name: String[32], symbol: String[32], decimals: ui
 
 
 @internal
-def _transferFrom(sender: address, receiver: address, amount: uint256) -> bool:
-    self.allowance[sender][msg.sender] -= amount
-
+def _transfer(sender: address, receiver: address, amount: uint256) -> bool:
     self.balanceOf[sender] -= amount
 
     # Cannot overflow because the sum of all user
@@ -51,12 +49,16 @@ def _transferFrom(sender: address, receiver: address, amount: uint256) -> bool:
 
 @external
 def transfer(receiver: address, amount: uint256) -> bool:
-    return self._transferFrom(msg.sender, receiver, amount)
+    return self._transfer(msg.sender, receiver, amount)
 
 
 @external
 def transferFrom(sender: address, receiver: address, amount: uint256) -> bool:
-    return self._transferFrom(sender, receiver, amount)
+    allowed: uint256 = self.allowance[sender][msg.sender]
+    if allowed != max_value(uint256):
+        self.allowance[sender][msg.sender] = allowed - amount
+
+    return self._transfer(sender, receiver, amount)
 
 
 @external
@@ -75,6 +77,18 @@ def mint(receiver: address, amount: uint256) -> bool:
     self.balanceOf[receiver] = unsafe_add(amount, self.balanceOf[receiver])
 
     log Transfer(empty(address), receiver, amount)
+    return True
+
+
+@external
+def burn(sender: address, amount: uint256) -> bool:
+    self.balanceOf[sender] -= amount
+
+    # Cannot underflow because a user's balance
+    # will never be larger than the total supply.
+    self.totalSupply = unsafe_sub(self.totalSupply, amount)
+
+    log Transfer(sender, empty(address), amount)
     return True
 
 
