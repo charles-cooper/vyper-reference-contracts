@@ -1,7 +1,8 @@
-from eth_utils import to_checksum_address
+from eth_utils import to_checksum_address, to_canonical_address
 import pytest
 import boa
 from boa.contract import BoaError
+from hypothesis import settings, example, given, strategies as st
 
 boa.interpret.set_cache_dir()
 
@@ -106,3 +107,27 @@ def test_fail_transferFrom_insufficient_balance(token, beef):
     token.approve(boa.env.eoa, ONE)
 
     token.transferFrom(sender, beef, ONE)
+
+
+MAX_UINT256 = 2 ** 256 - 1
+@given(st.binary(max_size=20), st.integers(min_value=0, max_value=MAX_UINT256))
+@example(recipient=boa.env.eoa, amount=0)
+@example(recipient=boa.env.eoa, amount=MAX_UINT256)
+@example(recipient=boa.env.eoa, amount=1)
+@settings(max_examples=256)
+def test_transfer_fuzzing(erc20, recipient, amount):
+    if isinstance(recipient, bytes):
+        recipient = to_checksum_address(recipient.rjust(20, b"\x00"))
+
+    with boa.env.anchor():
+        token = erc20
+        token.mint(boa.env.eoa, amount)
+
+        assert token.transfer(recipient, amount) is True
+        assert token.totalSupply() == amount
+
+        if recipient == boa.env.eoa:
+            assert token.balanceOf(boa.env.eoa) == amount
+        else:
+            assert token.balanceOf(boa.env.eoa) == 0
+            assert token.balanceOf(recipient) == amount
