@@ -11,9 +11,14 @@ ONE = 10**18
 def address(t):
     return to_checksum_address(t.rjust(40, "0"))
 
-@pytest.fixture()
-def token():
+@pytest.fixture(scope="session")
+def erc20():
     return boa.load("contracts/ERC20.vy", boa.env.eoa, "Token", "TKN", 18)
+
+@pytest.fixture()
+def token(erc20):
+    with boa.env.anchor():
+        yield erc20
 
 @pytest.fixture()
 def beef():
